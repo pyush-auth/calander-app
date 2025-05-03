@@ -72,9 +72,8 @@
     const container = document.getElementById('calendar');
 
     // Function to fetch month content
-    async function fetchMonthContent(year, month) {
+    async function fetchMonthContent(year, month, randomHoliday) {
         const wrapper = document.createElement('div');
-        const randomHoliday = document.getElementById('randomHoliday').checked; // Get the randomHoliday flag from the checkbox
 
         try {
             // Include randomHoliday in the query string
@@ -147,7 +146,11 @@
     }
 
     // Function to render months
-    (async () => {
+    async function renderCalendar() {
+        container.innerHTML = ''; // Clear the existing content
+
+        const randomHoliday = document.getElementById('randomHoliday').checked; // Get the randomHoliday flag from the checkbox
+
         for (let i = 0; i < 3; i += 2) {
             const rowDiv = document.createElement('div');
             rowDiv.className = 'month-row';
@@ -170,7 +173,7 @@
                 heading.textContent = `${monthNames[month - 1]} ${year}`;
                 monthContainer.appendChild(heading);
 
-                const monthContent = await fetchMonthContent(year, month);
+                const monthContent = await fetchMonthContent(year, month, randomHoliday);
                 monthContainer.appendChild(monthContent);
 
                 rowDiv.appendChild(monthContainer);
@@ -178,7 +181,14 @@
 
             container.appendChild(rowDiv);
         }
-    })();
+    }
+
+    // Initial render
+    renderCalendar();
+
+    // Reload calendar when checkbox is toggled
+    document.getElementById('randomHoliday').addEventListener('change', renderCalendar);
+
 </script>
 </body>
 </html>
