@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Calendar</title>
+    <style>
+        .month-row {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .month-container {
+            flex: 1;
+            min-width: 500px;
+        }
+
+        .month-heading {
+            font-size: 16px;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+        }
+
+        .week-row {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .day-box {
+            width: 80px;
+            height: 100px;
+            margin-right: 6px;
+            border: 1px solid #ccc;
+            text-align: center;
+            padding: 6px;
+            border-radius: 6px;
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            font-size: 10px;
+        }
+
+        .holiday {
+            font-size: 9px;
+            color: red;
+            margin-top: 4px;
+        }
+
+        .recommendation {
+            font-size: 9px;
+            color: green;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+<h2>Calendar View (Current + Next 2 Months)</h2>
+<div id="calendar"></div>
+
+<script>
+    const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
+
+    const today = new Date();
+    const container = document.getElementById('calendar');
+
+    async function fetchMonthContent(year, month) {
+        const wrapper = document.createElement('div');
+
+        try {
+            const response = await fetch(`/api/calender?year=${year}&month=${month}`);
+            const data = await response.json();
+
+            const weeks = {};
+            const daysMap = {};
+            const leaveRecommendations = {};
+
+            data.calenderDayObjects.forEach(day => {
+                if (!weeks[day.weekNumber]) {
+                    weeks[day.weekNumber] = [];
+                }
+                weeks[day.weekNumber].push(day);
+                daysMap[day.dayNumber] = day;
+            });
+
+            const isOff = (day) => !day || day.dayName === 'Sat' || day.dayName === 'Sun' || day.holiday;
+
+            for (let i = 1; i <= 31; i++) {
+                const d1 = daysMap[i];
+                const d2 = daysMap[i + 1];
+                const d3 = daysMap[i + 2];
+                const d4 = daysMap[i + 3];
+
+                if (isOff(d1) && d2 && !isOff(d2) && isOff(d3)) {
+                    leaveRecommendations[d2.dayNumber] = "💡 Best Option";
+                } else if (isOff(d1) && d2 && !isOff(d2) && d3 && !isOff(d3) && isOff(d4)) {
+                    leaveRecommendations[d2.dayNumber] = "⚠️ Less Better";
+                    leaveRecommendations[d3.dayNumber] = "⚠️ Less Better";
+                }
+            }
+
+            Object.keys(weeks).sort((a, b) => a - b).forEach(weekNum => {
+                const row = document.createElement('div');
+                row.className = 'week-row';
+
+                weeks[weekNum].forEach(day => {
+                    const box = document.createElement('div');
+                    box.className = 'day-box';
+                    box.style.backgroundColor = data.colors[day.weekNumber] || '#ffffff';
+
+                    const recommendation = leaveRecommendations[day.dayNumber];
+
+                    box.innerHTML = `
+                            <div><strong>${day.dayName}</strong></div>
+                            <div>Day ${day.dayNumber}</div>
+                            <div>Week ${day.weekNumber}</div>
+                            <div class="holiday">
+                                ${day.holiday ? `
+                                    <p>${day.holiday.holidayCountry}</p>
+                                    <p>${day.holiday.holidayOffice}</p>
+                                ` : 'No Holiday'}
+                            </div>
+                            ${recommendation ? `<div class="recommendation">${recommendation}</div>` : ''}
+                        `;
+
+                    row.appendChild(box);
+                });
+
+                wrapper.appendChild(row);
+            });
+        } catch (err) {
+            wrapper.textContent = 'Error loading month.';
+            console.error(err);
+        }
+
+        return wrapper;
+    }
+
+    (async () => {
+        for (let i = 0; i < 3; i += 2) {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'month-row';
+
+            for (let j = 0; j < 2 && i + j < 3; j++) {
+                const monthOffset = today.getMonth() + 1 + i + j;
+                let month = monthOffset;
+                let year = today.getFullYear();
+
+                if (month > 12) {
+                    month -= 12;
+                    year += 1;
+                }
+
+                const monthContainer = document.createElement('div');
+                monthContainer.className = 'month-container';
+
+                const heading = document.createElement('div');
+                heading.className = 'month-heading';
+                heading.textContent = `${monthNames[month - 1]} ${year}`;
+                monthContainer.appendChild(heading);
+
+                const monthContent = await fetchMonthContent(year, month);
+                monthContainer.appendChild(monthContent);
+
+                rowDiv.appendChild(monthContainer);
+            }
+
+            container.appendChild(rowDiv);
+        }
+    })();
+</script>
+</body>
+</html>
