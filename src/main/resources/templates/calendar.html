@@ -55,6 +55,11 @@
 </head>
 <body>
 <h2>Calendar View (Current + Next 2 Months)</h2>
+
+<!-- Random Holiday Checkbox -->
+<label for="randomHoliday">Random Holiday:</label>
+<input type="checkbox" id="randomHoliday">
+
 <div id="calendar"></div>
 
 <script>
@@ -66,11 +71,14 @@
     const today = new Date();
     const container = document.getElementById('calendar');
 
+    // Function to fetch month content
     async function fetchMonthContent(year, month) {
         const wrapper = document.createElement('div');
+        const randomHoliday = document.getElementById('randomHoliday').checked; // Get the randomHoliday flag from the checkbox
 
         try {
-            const response = await fetch(`/api/calender?year=${year}&month=${month}`);
+            // Include randomHoliday in the query string
+            const response = await fetch(`/api/calender?year=${year}&month=${month}&random-holiday=${randomHoliday}`);
             const data = await response.json();
 
             const weeks = {};
@@ -113,17 +121,17 @@
                     const recommendation = leaveRecommendations[day.dayNumber];
 
                     box.innerHTML = `
-                            <div><strong>${day.dayName}</strong></div>
-                            <div>Day ${day.dayNumber}</div>
-                            <div>Week ${day.weekNumber}</div>
-                            <div class="holiday">
-                                ${day.holiday ? `
-                                    <p>${day.holiday.holidayCountry}</p>
-                                    <p>${day.holiday.holidayOffice}</p>
-                                ` : 'No Holiday'}
-                            </div>
-                            ${recommendation ? `<div class="recommendation">${recommendation}</div>` : ''}
-                        `;
+                                <div><strong>${day.dayName}</strong></div>
+                                <div>Day ${day.dayNumber}</div>
+                                <div>Week ${day.weekNumber}</div>
+                                <div class="holiday">
+                                    ${day.holiday ? `
+                                        <p>${day.holiday.holidayCountry}</p>
+                                        <p>${day.holiday.holidayOffice}</p>
+                                    ` : 'No Holiday'}
+                                </div>
+                                ${recommendation ? `<div class="recommendation">${recommendation}</div>` : ''}
+                            `;
 
                     row.appendChild(box);
                 });
@@ -138,6 +146,7 @@
         return wrapper;
     }
 
+    // Function to render months
     (async () => {
         for (let i = 0; i < 3; i += 2) {
             const rowDiv = document.createElement('div');

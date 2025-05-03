@@ -11,7 +11,7 @@ import java.util.*;
 @Service
 public class CalenderService {
 
-    public ArrayList<CalenderDay> getMonthInfo(int year, int month) {
+    public ArrayList<CalenderDay> getMonthInfo(int year, int month, boolean randomHoliday) {
         ArrayList<CalenderDay> result = new ArrayList<>();
         try {
             DayOfWeek[] days = DayOfWeek.values();
@@ -40,7 +40,7 @@ public class CalenderService {
                 Holiday holiday = null;
                 boolean result1 = random.nextDouble() < 0.3;
                 String weekDay = currentDayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
-                if (result1 || weekDay.equals("Sun") || weekDay.equals("Sat")) {
+                if (randomHoliday && (result1 || weekDay.equals("Sun") || weekDay.equals("Sat"))) {
                     holiday = new Holiday("IN", "ALL", (weekDay.equals("Sun") || weekDay.equals("Sat")) ? "Weekend holiday" : "Holiday");
                 }
                 CalenderDay calenderDay = new CalenderDay(

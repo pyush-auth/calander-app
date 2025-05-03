@@ -24,10 +24,10 @@ public class MainController {
     @GetMapping(value = "/api/calender", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CalenderResonse> listAllFeatures(
             @RequestParam int year,
-            @RequestParam int month
-    ) {
+            @RequestParam int month,
+            @RequestParam(name = "random-holiday", defaultValue = "false") boolean randomHoliday) {
         try {
-            ArrayList<CalenderDay> calenderDayObjects = calenderService.getMonthInfo(year, month);
+            ArrayList<CalenderDay> calenderDayObjects = calenderService.getMonthInfo(year, month, randomHoliday);
             ArrayList<CalenderDay> googleCalander = googleCalendarFetcher.getHolidays(year, month);
 
             Map<Integer, CalenderDay> holidayMap = new HashMap<>();
