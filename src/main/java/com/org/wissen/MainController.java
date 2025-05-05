@@ -21,6 +21,10 @@ public class MainController {
     @Autowired
     private GoogleCalendarFetcher googleCalendarFetcher;
 
+    @Autowired
+    private Utils utils;
+
+
     @GetMapping(value = "/api/calender", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CalenderResonse> listAllFeatures(
             @RequestParam int year,
@@ -29,14 +33,14 @@ public class MainController {
             @RequestParam(name = "only-holiday-week", defaultValue = "false") boolean onlyHolidayWeek
     ) {
         try {
-            ArrayList<CalenderDay> calenderDayObjects = calenderService.getMonthInfo(year, month, randomHoliday);
-            ArrayList<CalenderDay> googleCalander = googleCalendarFetcher.getHolidays(year, month);
-            ArrayList<CalenderDay> holidayweeks = new ArrayList<>();
+            ArrayList<CalenderDay> calenderDayObjects = utils.generateHolidays(year, month, randomHoliday);
+            ArrayList<CalenderDay> googleCalendar = googleCalendarFetcher.getHolidays(year, month);
+            ArrayList<CalenderDay> holidaymakers = new ArrayList<>();
 
             Map<Integer, String> colors = calenderService.buildWeeklyColorData(calenderDayObjects);
 
             Map<Integer, CalenderDay> holidayMap = new HashMap<>();
-            for (CalenderDay holiday : googleCalander) {
+            for (CalenderDay holiday : googleCalendar) {
                 holidayMap.put(holiday.getDayNumber(), holiday);
             }
 
@@ -47,12 +51,12 @@ public class MainController {
                 }
 
                 if (colors.containsKey(day.getWeekNumber())) {
-                    holidayweeks.add(day);
+                    holidaymakers.add(day);
                 }
             }
 
 
-            return ResponseEntity.ok(new CalenderResonse(onlyHolidayWeek ? holidayweeks : calenderDayObjects, colors));
+            return ResponseEntity.ok(new CalenderResonse(onlyHolidayWeek ? holidaymakers : calenderDayObjects, colors));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
