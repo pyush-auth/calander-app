@@ -42,6 +42,8 @@ public class CalenderService {
                 String weekDay = currentDayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
                 if (randomHoliday && (result1 || weekDay.equals("Sun") || weekDay.equals("Sat"))) {
                     holiday = new Holiday("IN", "ALL", (weekDay.equals("Sun") || weekDay.equals("Sat")) ? "Weekend holiday" : "Holiday");
+                } else if (weekDay.equals("Sun") || weekDay.equals("Sat")) {
+                    holiday = new Holiday("ALL", "ALL", "Weekend holiday");
                 }
                 CalenderDay calenderDay = new CalenderDay(
                         dayOfMonth,

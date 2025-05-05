@@ -25,25 +25,34 @@ public class MainController {
     public ResponseEntity<CalenderResonse> listAllFeatures(
             @RequestParam int year,
             @RequestParam int month,
-            @RequestParam(name = "random-holiday", defaultValue = "false") boolean randomHoliday) {
+            @RequestParam(name = "random-holiday", defaultValue = "false") boolean randomHoliday,
+            @RequestParam(name = "only-holiday-week", defaultValue = "false") boolean onlyHolidayWeek
+    ) {
         try {
             ArrayList<CalenderDay> calenderDayObjects = calenderService.getMonthInfo(year, month, randomHoliday);
             ArrayList<CalenderDay> googleCalander = googleCalendarFetcher.getHolidays(year, month);
+            ArrayList<CalenderDay> holidayweeks = new ArrayList<>();
+
+            Map<Integer, String> colors = calenderService.buildWeeklyColorData(calenderDayObjects);
 
             Map<Integer, CalenderDay> holidayMap = new HashMap<>();
             for (CalenderDay holiday : googleCalander) {
                 holidayMap.put(holiday.getDayNumber(), holiday);
             }
 
+
             for (CalenderDay day : calenderDayObjects) {
                 if (holidayMap.containsKey(day.getDayNumber())) {
                     day.setHoliday(holidayMap.get(day.getDayNumber()).getHoliday());
                 }
+
+                if (colors.containsKey(day.getWeekNumber())) {
+                    holidayweeks.add(day);
+                }
             }
 
-            Map<Integer, String> colors = calenderService.buildWeeklyColorData(calenderDayObjects);
 
-            return ResponseEntity.ok(new CalenderResonse(calenderDayObjects, colors));
+            return ResponseEntity.ok(new CalenderResonse(onlyHolidayWeek ? holidayweeks : calenderDayObjects, colors));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

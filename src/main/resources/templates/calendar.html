@@ -51,14 +51,24 @@
             color: green;
             margin-top: 4px;
         }
+
+        .checkbox-group {
+            margin-bottom: 20px;
+            font-family: Arial, sans-serif;
+        }
     </style>
 </head>
 <body>
 <h2>Calendar View (Current + Next 2 Months)</h2>
 
-<!-- Random Holiday Checkbox -->
-<label for="randomHoliday">Random Holiday:</label>
-<input type="checkbox" id="randomHoliday">
+<!-- Checkboxes -->
+<div class="checkbox-group">
+    <label for="randomHoliday">Random Holiday:</label>
+    <input type="checkbox" id="randomHoliday" />
+
+    <label for="onlyHolidayWeek" style="margin-left: 20px;">Show Only Holiday Week:</label>
+    <input type="checkbox" id="onlyHolidayWeek" />
+</div>
 
 <div id="calendar"></div>
 
@@ -71,13 +81,11 @@
     const today = new Date();
     const container = document.getElementById('calendar');
 
-    // Function to fetch month content
-    async function fetchMonthContent(year, month, randomHoliday) {
+    async function fetchMonthContent(year, month, randomHoliday, onlyHolidayWeek) {
         const wrapper = document.createElement('div');
 
         try {
-            // Include randomHoliday in the query string
-            const response = await fetch(`/api/calender?year=${year}&month=${month}&random-holiday=${randomHoliday}`);
+            const response = await fetch(`/api/calender?year=${year}&month=${month}&random-holiday=${randomHoliday}&only-holiday-week=${onlyHolidayWeek}`);
             const data = await response.json();
 
             const weeks = {};
@@ -109,10 +117,15 @@
             }
 
             Object.keys(weeks).sort((a, b) => a - b).forEach(weekNum => {
+                const week = weeks[weekNum];
+                const containsHoliday = week.some(day => day.holiday);
+
+                if (onlyHolidayWeek && !containsHoliday) return;
+
                 const row = document.createElement('div');
                 row.className = 'week-row';
 
-                weeks[weekNum].forEach(day => {
+                week.forEach(day => {
                     const box = document.createElement('div');
                     box.className = 'day-box';
                     box.style.backgroundColor = data.colors[day.weekNumber] || '#ffffff';
@@ -120,23 +133,25 @@
                     const recommendation = leaveRecommendations[day.dayNumber];
 
                     box.innerHTML = `
-                                <div><strong>${day.dayName}</strong></div>
-                                <div>Day ${day.dayNumber}</div>
-                                <div>Week ${day.weekNumber}</div>
-                                <div class="holiday">
-                                    ${day.holiday ? `
-                                        <p>${day.holiday.holidayCountry}</p>
-                                        <p>${day.holiday.holidayOffice}</p>
-                                    ` : 'No Holiday'}
-                                </div>
-                                ${recommendation ? `<div class="recommendation">${recommendation}</div>` : ''}
-                            `;
+                            <div><strong>${day.dayName}</strong></div>
+                            <div>Day ${day.dayNumber}</div>
+                            <div>Week ${day.weekNumber}</div>
+                            <div class="holiday">
+                                ${day.holiday ? `
+                                    <p>${day.holiday.holidayCountry}</p>
+                                    <p>${day.holiday.holidayOffice}</p>
+                                    <p>${day.holiday.description != null ? day.holiday.description : ""}</p>
+                                ` : 'No Holiday'}
+                            </div>
+                            ${recommendation ? `<div class="recommendation">${recommendation}</div>` : ''}
+                        `;
 
                     row.appendChild(box);
                 });
 
                 wrapper.appendChild(row);
             });
+
         } catch (err) {
             wrapper.textContent = 'Error loading month.';
             console.error(err);
@@ -145,11 +160,11 @@
         return wrapper;
     }
 
-    // Function to render months
     async function renderCalendar() {
-        container.innerHTML = ''; // Clear the existing content
+        container.innerHTML = '';
 
-        const randomHoliday = document.getElementById('randomHoliday').checked; // Get the randomHoliday flag from the checkbox
+        const randomHoliday = document.getElementById('randomHoliday').checked;
+        const onlyHolidayWeek = document.getElementById('onlyHolidayWeek').checked;
 
         for (let i = 0; i < 3; i += 2) {
             const rowDiv = document.createElement('div');
@@ -173,7 +188,7 @@
                 heading.textContent = `${monthNames[month - 1]} ${year}`;
                 monthContainer.appendChild(heading);
 
-                const monthContent = await fetchMonthContent(year, month, randomHoliday);
+                const monthContent = await fetchMonthContent(year, month, randomHoliday, onlyHolidayWeek);
                 monthContainer.appendChild(monthContent);
 
                 rowDiv.appendChild(monthContainer);
@@ -186,9 +201,9 @@
     // Initial render
     renderCalendar();
 
-    // Reload calendar when checkbox is toggled
+    // Event listeners for toggles
     document.getElementById('randomHoliday').addEventListener('change', renderCalendar);
-
+    document.getElementById('onlyHolidayWeek').addEventListener('change', renderCalendar);
 </script>
 </body>
 </html>
